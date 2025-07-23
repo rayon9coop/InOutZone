@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recherche d'adresses - Liège</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .search-section {
+            margin-bottom: 30px;
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        #streetInput {
+            width: 100%;
+            padding: 20px 25px;
+            font-size: 18px;
+            border: 3px solid #ecf0f1;
+            border-radius: 15px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        
+        #streetInput:focus {
+            border-color: #3498db;
+        }
+        
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 3px solid #ecf0f1;
+            border-top: none;
+            border-radius: 0 0 15px 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .suggestion-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-bottom: 1px solid #ecf0f1;
+            transition: background-color 0.2s ease;
+        }
+        
+        .suggestion-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .street-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .street-details {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .result {
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 1.1em;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .result.success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+        
+        .result.not-found {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .result.question {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+        
+        .import-section {
+            margin-top: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        
+        .import-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        #csvInput {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed #bdc3c7;
+            border-radius: 10px;
+            background: white;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+        
+        #csvInput:hover {
+            border-color: #3498db;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .stat-item {
+            padding: 20px;
+            background: linear-gradient(135deg, #ecf0f1, #bdc3c7);
+            border-radius: 15px;
+            min-width: 120px;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏘️ Recherche d'adresses</h1>
+            <p>Vérifiez si une rue est dans votre zone de livraison</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="streetCount">102</div>
+                    <div class="stat-label">Rues référencées</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="searchCount">0</div>
+                    <div class="stat-label">Recherches</div>
+                </div>
+            </div>
+            
+            <div class="search-section">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="streetInput" 
+                        placeholder="Tapez les premières lettres d'une rue (ex: avro, pont, saint...)"
+                        autocomplete="off"
+                    >
+                    <div class="suggestions" id="suggestions"></div>
+                </div>
+            </div>
+            
+            <div id="result"></div>
+            
+            <div class="import-section">
+                <h3>📥 Importer de nouvelles adresses</h3>
+                <input type="file" id="csvInput" accept=".csv" style="display: none;">
+                <div onclick="document.getElementById('csvInput').click()" style="cursor: pointer; padding: 20px; border: 2px dashed #bdc3c7; border-radius: 10px; text-align: center; background: white;">
+                    <p><strong>Cliquez ici pour importer un fichier CSV</strong></p>
+                    <p style="color: #7f8c8d; margin-top: 10px;">Format attendu: même structure que le fichier original</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données des rues mises à jour depuis le fichier CSV
+        let streets = [
+            {street: "Avenue Maurice Destenay", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Bergerue", city: "Liège", postcode: "4000", zone: "4000CJ"},
+            {street: "Boulevard d Avroy", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Boulevard de l Est", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Boulevard de la Constitution", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Boulevard de la Sauvenière", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Boulevard Saucy", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Chaussée des Prés", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Impasse Croctay", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Parvis des Écoliers", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Passage Charles Bury", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Passage Lemonnier", city: "Liège", postcode: "4000", zone: "4000BW"},
+            {street: "Place de la Cathédrale", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Place Delcour", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Place des Arts", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Place des Carmes", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "PLACE DU CONGRÈS", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Place du Vingt Août", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "PLACE JEHAN-LE-BEL", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Place Sainte-Barbe", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Place Saint-Lambert", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Place Saint-Paul", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Place Saint-Pholien", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Place Sylvain Dupuis", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Place Théodore Gobert", city: "Liège", postcode: "4020", zone: "4020AY"},
+            {street: "Place Verte", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Place Xavier Neujean", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Pont d Ile", city: "Liège", postcode: "4000", zone: "4000CJ"},
+            {street: "Quai de Gaulle", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Quai de l Ourthe", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Quai de la Dérivation", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Quai des Tanneurs", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "QUAI DU BARBOU", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Quai Edouard Van Beneden", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Quai Godefroid Kurth", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Quai Sainte-Barbe", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue Alex Bouvy", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue Basse Sauvenière", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Rue Beauregard", city: "Liège", postcode: "4020", zone: "4020AY"},
+            {street: "Rue Bonne Fortune", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Rue Capitaine", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Charles Magnette", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "RUE CURTIUS", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue de Berghes", city: "Liège", postcode: "4020", zone: "4020AY"},
+            {street: "Rue de l Abattoir", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue de l Enseignement", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue de l Official", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Rue de l Ourthe", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue de l Université", city: "Liège", postcode: "4000", zone: "4000BW"},
+            {street: "Rue de la Casquette", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Rue de la Cathédrale", city: "Liège", postcode: "4000", zone: "4000BW"},
+            {street: "Rue de la Commune", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue de la Justice", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue de la Liberté", city: "Liège", postcode: "4020", zone: "4020AY"},
+            {street: "Rue de la Loi", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue de la Province", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue de la Sirène", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "RUE DE PITTEURS", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue des Bonnes Villes", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue des Carmes", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Rue des Célestines", city: "Liège", postcode: "4000", zone: "4000CJ"},
+            {street: "Rue des Clarisses", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Rue des Dominicains", city: "Liège", postcode: "4000", zone: "4000CJ"},
+            {street: "Rue des Ecoliers", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue des Récollets", city: "Liège", postcode: "4020", zone: "4020AY"},
+            {street: "Rue des Tanneurs", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue Devant-les-Ecoliers", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue Dos-Fanchon", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue du Diamant", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Rue du Mery", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Rue du Mouton Blanc", city: "Liège", postcode: "4000", zone: "4000BW"},
+            {street: "Rue du Pâquier", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue du Parlement", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue du Pot d Or", city: "Liège", postcode: "4000", zone: "4000CJ"},
+            {street: "Rue Ernest de Bavière", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue Gaston Grégoire", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue Georges Clémenceau", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Rue Georges-Simenon", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue Grande-Bêche", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Hamal", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "RUE HAZINELLE", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Rue Henri de Dinant", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue Jean Delvoye", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Jean d Outremeuse", city: "Liège", postcode: "4020", zone: "4020AY"},
+            {street: "Rue Joffre", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Rue Joseph Vrindts", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue Louis Jamme", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Lulay des Fèbvres", city: "Liège", postcode: "4000", zone: "4000BW"},
+            {street: "Rue Mathieu Polain", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue Méan", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Pont d Avroy", city: "Liège", postcode: "4000", zone: "4000BW"},
+            {street: "Rue Pont Saint-Nicolas", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Porte Grumsel", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Puits-en-Sock", city: "Liège", postcode: "4020", zone: "4020AY"},
+            {street: "RUE RANSONNET", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Rue Roture", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Rouleau", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Saint Michel", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Rue Saint-Adalbert", city: "Liège", postcode: "4000", zone: "4000CJ"},
+            {street: "Rue Saint-Eloi", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Saint-Jean-en-Isle", city: "Liège", postcode: "4000", zone: "4000CJ"},
+            {street: "Rue Saint-Julien", city: "Liège", postcode: "4020", zone: "4020AY"},
+            {street: "Rue Saint-Martin-en-Ile", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Rue Saint-Paul", city: "Liège", postcode: "4000", zone: "4000BJ"},
+            {street: "Rue Saint-Pholien", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Sébastien Laruelle", city: "Liège", postcode: "4000", zone: "4000BM"},
+            {street: "Rue Strailhe", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "Rue Surlet", city: "Liège", postcode: "4020", zone: "4020AM"},
+            {street: "RUE TÊTE DE BOEUF", city: "Liège", postcode: "4000", zone: "4000BW"},
+            {street: "Rue Théodore Schwann", city: "Liège", postcode: "4020", zone: "4020AX"},
+            {street: "Rue Villenfagne", city: "Liège", postcode: "4020", zone: "4020AL"},
+            {street: "Vinâve d Ile", city: "Liège", postcode: "4000", zone: "4000BW"}
+        ];
+
+        let searchCount = 0;
+
+        // Normaliser les chaînes pour la recherche
+        function normalizeString(str) {
+            return str.toLowerCase()
+                .replace(/[àáâãäå]/g, 'a')
+                .replace(/[èéêë]/g, 'e')
+                .replace(/[ìíîï]/g, 'i')
+                .replace(/[òóôõö]/g, 'o')
+                .replace(/[ùúûü]/g, 'u')
+                .replace(/[ç]/g, 'c')
+                .replace(/[ñ]/g, 'n')
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // Fonction de recherche avec suggestions
+        function searchStreets(query) {
+            const normalizedQuery = normalizeString(query);
+            if (!normalizedQuery) return [];
+
+            const words = normalizedQuery.split(' ');
+            
+            return streets.filter(street => {
+                const normalizedStreet = normalizeString(street.street);
+                return words.every(word => 
+                    normalizedStreet.includes(word)
+                );
+            }).slice(0, 8);
+        }
+
+        // Afficher les suggestions
+        function showSuggestions(suggestions) {
+            const suggestionsDiv = document.getElementById('suggestions');
+            
+            if (suggestions.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+
+            suggestionsDiv.innerHTML = suggestions.map(street => `
+                <div class="suggestion-item" onclick="selectStreet('${street.street.replace(/'/g, "\\'")}')">
+                    <div class="street-name">${street.street}</div>
+                    <div class="street-details">${street.postcode} ${street.city} - Zone: ${street.zone}</div>
+                </div>
+            `).join('');
+            
+            suggestionsDiv.style.display = 'block';
+        }
+
+        // Sélectionner une rue
+        function selectStreet(streetName) {
+            document.getElementById('streetInput').value = streetName;
+            document.getElementById('suggestions').style.display = 'none';
+            searchStreet(streetName);
+        }
+
+        // Rechercher une rue spécifique
+        function searchStreet(streetName) {
+            searchCount++;
+            document.getElementById('searchCount').textContent = searchCount;
+            
+            const foundStreet = streets.find(street => 
+                normalizeString(street.street) === normalizeString(streetName)
+            );
+
+            const resultDiv = document.getElementById('result');
+            
+            if (foundStreet) {
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        ✅ "${foundStreet.street}" est dans notre zone de livraison !<br>
+                        📍 ${foundStreet.postcode} ${foundStreet.city} - Zone: ${foundStreet.zone}
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="result not-found">
+                        ❌ "${streetName}" n'est pas dans notre zone de livraison
+                    </div>
+                    <div class="buttons">
+                        <button class="btn btn-primary" onclick="clearSearch()">Nouvelle recherche</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Nettoyer la recherche
+        function clearSearch() {
+            document.getElementById('streetInput').value = '';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('suggestions').style.display = 'none';
+        }
+
+        // Gestion des événements
+        document.getElementById('streetInput').addEventListener('input', function(e) {
+            const query = e.target.value;
+            if (query.length >= 2) {
+                const suggestions = searchStreets(query);
+                showSuggestions(suggestions);
+            } else {
+                document.getElementById('suggestions').style.display = 'none';
+            }
+        });
+
+        document.getElementById('streetInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = e.target.value;
+                if (query.trim()) {
+                    document.getElementById('suggestions').style.display = 'none';
+                    searchStreet(query);
+                }
+            }
+        });
+
+        // Cacher les suggestions en cliquant ailleurs
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-box')) {
+                document.getElementById('suggestions').style.display = 'none';
+            }
+        });
+
+        // Gestion de l'import CSV
+        document.getElementById('csvInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type === 'text/csv') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        parseCSV(e.target.result);
+                    } catch (error) {
+                        alert('Erreur lors de la lecture du fichier CSV: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Parser le CSV
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim());
+            const headers = lines[0].split(',');
+            
+            const newStreets = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                if (values.length >= 4) {
+                    newStreets.push({
+                        street: values[2].replace(/"/g, ''),
+                        city: values[1].replace(/"/g, ''),
+                        postcode: values[0].replace(/"/g, ''),
+                        zone: values[5] ? values[5].replace(/"/g, '') : 'N/A'
+                    });
+                }
+            }
+            
+            if (newStreets.length > 0) {
+                streets = newStreets;
+                document.getElementById('streetCount').textContent = streets.length;
+                alert(`${newStreets.length} adresses importées avec succès !`);
+                clearSearch();
+            }
+        }
+
+        // Initialisation
+        document.getElementById('streetCount').textContent = streets.length;
+    </script>
+</body>
+</html>
