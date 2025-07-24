@@ -1,559 +1,1925 @@
+
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recherche d'adresses - Liège</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-        
-        .main-content {
-            padding: 40px;
-        }
-        
-        .search-section {
-            margin-bottom: 30px;
-        }
-        
-        .search-box {
-            position: relative;
-            margin-bottom: 20px;
-        }
-        
-        #streetInput {
-            width: 100%;
-            padding: 20px 25px;
-            font-size: 18px;
-            border: 3px solid #ecf0f1;
-            border-radius: 15px;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
-        
-        #streetInput:focus {
-            border-color: #3498db;
-        }
-        
-        .suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 3px solid #ecf0f1;
-            border-top: none;
-            border-radius: 0 0 15px 15px;
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-        
-        .suggestion-item {
-            padding: 15px 25px;
-            cursor: pointer;
-            border-bottom: 1px solid #ecf0f1;
-            transition: background-color 0.2s ease;
-        }
-        
-        .suggestion-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .suggestion-item:last-child {
-            border-bottom: none;
-        }
-        
-        .street-name {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .street-details {
-            font-size: 0.9em;
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-        
-        .result {
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px 0;
-            font-size: 1.1em;
-            text-align: center;
-            font-weight: bold;
-        }
-        
-        .result.success {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            color: white;
-        }
-        
-        .result.not-found {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-        }
-        
-        .result.question {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            color: white;
-        }
-        
-        .buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        
-        .btn {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
-            color: white;
-        }
-        
-        .import-section {
-            margin-top: 40px;
-            padding: 30px;
-            background: #f8f9fa;
-            border-radius: 15px;
-        }
-        
-        .import-section h3 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        #csvInput {
-            width: 100%;
-            padding: 15px;
-            border: 2px dashed #bdc3c7;
-            border-radius: 10px;
-            background: white;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.3s ease;
-        }
-        
-        #csvInput:hover {
-            border-color: #3498db;
-        }
-        
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin: 30px 0;
-            text-align: center;
-        }
-        
-        .stat-item {
-            padding: 20px;
-            background: linear-gradient(135deg, #ecf0f1, #bdc3c7);
-            border-radius: 15px;
-            min-width: 120px;
-        }
-        
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .stat-label {
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-    </style>
+    <title>Carte des rues</title>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🏘️ Recherche d'adresses</h1>
-            <p>Vérifiez si une rue est dans votre zone de livraison</p>
-        </div>
-        
-        <div class="main-content">
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-number" id="streetCount">102</div>
-                    <div class="stat-label">Rues référencées</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="searchCount">0</div>
-                    <div class="stat-label">Recherches</div>
-                </div>
-            </div>
-            
-            <div class="search-section">
-                <div class="search-box">
-                    <input 
-                        type="text" 
-                        id="streetInput" 
-                        placeholder="Tapez les premières lettres d'une rue (ex: avro, pont, saint...)"
-                        autocomplete="off"
-                    >
-                    <div class="suggestions" id="suggestions"></div>
-                </div>
-            </div>
-            
-            <div id="result"></div>
-            
-            <div class="import-section">
-                <h3>📥 Importer de nouvelles adresses</h3>
-                <input type="file" id="csvInput" accept=".csv" style="display: none;">
-                <div onclick="document.getElementById('csvInput').click()" style="cursor: pointer; padding: 20px; border: 2px dashed #bdc3c7; border-radius: 10px; text-align: center; background: white;">
-                    <p><strong>Cliquez ici pour importer un fichier CSV</strong></p>
-                    <p style="color: #7f8c8d; margin-top: 10px;">Format attendu: même structure que le fichier original</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Données des rues mises à jour depuis le fichier CSV
         let streets = [
-            {street: "Avenue Maurice Destenay", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Bergerue", city: "Liège", postcode: "4000", zone: "4000CJ"},
-            {street: "Boulevard d Avroy", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Boulevard de l Est", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Boulevard de la Constitution", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Boulevard de la Sauvenière", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Boulevard Saucy", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Chaussée des Prés", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Impasse Croctay", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Parvis des Écoliers", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Passage Charles Bury", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Passage Lemonnier", city: "Liège", postcode: "4000", zone: "4000BW"},
-            {street: "Place de la Cathédrale", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Place Delcour", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Place des Arts", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Place des Carmes", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "PLACE DU CONGRÈS", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Place du Vingt Août", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "PLACE JEHAN-LE-BEL", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Place Sainte-Barbe", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Place Saint-Lambert", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Place Saint-Paul", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Place Saint-Pholien", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Place Sylvain Dupuis", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Place Théodore Gobert", city: "Liège", postcode: "4020", zone: "4020AY"},
-            {street: "Place Verte", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Place Xavier Neujean", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Pont d Ile", city: "Liège", postcode: "4000", zone: "4000CJ"},
-            {street: "Quai de Gaulle", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Quai de l Ourthe", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Quai de la Dérivation", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Quai des Tanneurs", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "QUAI DU BARBOU", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Quai Edouard Van Beneden", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Quai Godefroid Kurth", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Quai Sainte-Barbe", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue Alex Bouvy", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue Basse Sauvenière", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Rue Beauregard", city: "Liège", postcode: "4020", zone: "4020AY"},
-            {street: "Rue Bonne Fortune", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Rue Capitaine", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Charles Magnette", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "RUE CURTIUS", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue de Berghes", city: "Liège", postcode: "4020", zone: "4020AY"},
-            {street: "Rue de l Abattoir", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue de l Enseignement", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue de l Official", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Rue de l Ourthe", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue de l Université", city: "Liège", postcode: "4000", zone: "4000BW"},
-            {street: "Rue de la Casquette", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Rue de la Cathédrale", city: "Liège", postcode: "4000", zone: "4000BW"},
-            {street: "Rue de la Commune", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue de la Justice", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue de la Liberté", city: "Liège", postcode: "4020", zone: "4020AY"},
-            {street: "Rue de la Loi", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue de la Province", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue de la Sirène", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "RUE DE PITTEURS", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue des Bonnes Villes", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue des Carmes", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Rue des Célestines", city: "Liège", postcode: "4000", zone: "4000CJ"},
-            {street: "Rue des Clarisses", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Rue des Dominicains", city: "Liège", postcode: "4000", zone: "4000CJ"},
-            {street: "Rue des Ecoliers", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue des Récollets", city: "Liège", postcode: "4020", zone: "4020AY"},
-            {street: "Rue des Tanneurs", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue Devant-les-Ecoliers", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue Dos-Fanchon", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue du Diamant", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Rue du Mery", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Rue du Mouton Blanc", city: "Liège", postcode: "4000", zone: "4000BW"},
-            {street: "Rue du Pâquier", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue du Parlement", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue du Pot d Or", city: "Liège", postcode: "4000", zone: "4000CJ"},
-            {street: "Rue Ernest de Bavière", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue Gaston Grégoire", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue Georges Clémenceau", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Rue Georges-Simenon", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue Grande-Bêche", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Hamal", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "RUE HAZINELLE", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Rue Henri de Dinant", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue Jean Delvoye", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Jean d Outremeuse", city: "Liège", postcode: "4020", zone: "4020AY"},
-            {street: "Rue Joffre", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Rue Joseph Vrindts", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue Louis Jamme", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Lulay des Fèbvres", city: "Liège", postcode: "4000", zone: "4000BW"},
-            {street: "Rue Mathieu Polain", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue Méan", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Pont d Avroy", city: "Liège", postcode: "4000", zone: "4000BW"},
-            {street: "Rue Pont Saint-Nicolas", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Porte Grumsel", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Puits-en-Sock", city: "Liège", postcode: "4020", zone: "4020AY"},
-            {street: "RUE RANSONNET", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Rue Roture", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Rouleau", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Saint Michel", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Rue Saint-Adalbert", city: "Liège", postcode: "4000", zone: "4000CJ"},
-            {street: "Rue Saint-Eloi", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Saint-Jean-en-Isle", city: "Liège", postcode: "4000", zone: "4000CJ"},
-            {street: "Rue Saint-Julien", city: "Liège", postcode: "4020", zone: "4020AY"},
-            {street: "Rue Saint-Martin-en-Ile", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Rue Saint-Paul", city: "Liège", postcode: "4000", zone: "4000BJ"},
-            {street: "Rue Saint-Pholien", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Sébastien Laruelle", city: "Liège", postcode: "4000", zone: "4000BM"},
-            {street: "Rue Strailhe", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "Rue Surlet", city: "Liège", postcode: "4020", zone: "4020AM"},
-            {street: "RUE TÊTE DE BOEUF", city: "Liège", postcode: "4000", zone: "4000BW"},
-            {street: "Rue Théodore Schwann", city: "Liège", postcode: "4020", zone: "4020AX"},
-            {street: "Rue Villenfagne", city: "Liège", postcode: "4020", zone: "4020AL"},
-            {street: "Vinâve d Ile", city: "Liège", postcode: "4000", zone: "4000BW"}
-        ];
-
-        let searchCount = 0;
-
-        // Normaliser les chaînes pour la recherche
-        function normalizeString(str) {
-            return str.toLowerCase()
-                .replace(/[àáâãäå]/g, 'a')
-                .replace(/[èéêë]/g, 'e')
-                .replace(/[ìíîï]/g, 'i')
-                .replace(/[òóôõö]/g, 'o')
-                .replace(/[ùúûü]/g, 'u')
-                .replace(/[ç]/g, 'c')
-                .replace(/[ñ]/g, 'n')
-                .replace(/[^a-z0-9\s]/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        // Fonction de recherche avec suggestions
-        function searchStreets(query) {
-            const normalizedQuery = normalizeString(query);
-            if (!normalizedQuery) return [];
-
-            const words = normalizedQuery.split(' ');
-            
-            return streets.filter(street => {
-                const normalizedStreet = normalizeString(street.street);
-                return words.every(word => 
-                    normalizedStreet.includes(word)
-                );
-            }).slice(0, 8);
-        }
-
-        // Afficher les suggestions
-        function showSuggestions(suggestions) {
-            const suggestionsDiv = document.getElementById('suggestions');
-            
-            if (suggestions.length === 0) {
-                suggestionsDiv.style.display = 'none';
-                return;
-            }
-
-            suggestionsDiv.innerHTML = suggestions.map(street => `
-                <div class="suggestion-item" onclick="selectStreet('${street.street.replace(/'/g, "\\'")}')">
-                    <div class="street-name">${street.street}</div>
-                    <div class="street-details">${street.postcode} ${street.city} - Zone: ${street.zone}</div>
-                </div>
-            `).join('');
-            
-            suggestionsDiv.style.display = 'block';
-        }
-
-        // Sélectionner une rue
-        function selectStreet(streetName) {
-            document.getElementById('streetInput').value = streetName;
-            document.getElementById('suggestions').style.display = 'none';
-            searchStreet(streetName);
-        }
-
-        // Rechercher une rue spécifique
-        function searchStreet(streetName) {
-            searchCount++;
-            document.getElementById('searchCount').textContent = searchCount;
-            
-            const foundStreet = streets.find(street => 
-                normalizeString(street.street) === normalizeString(streetName)
-            );
-
-            const resultDiv = document.getElementById('result');
-            
-            if (foundStreet) {
-                resultDiv.innerHTML = `
-                    <div class="result success">
-                        ✅ "${foundStreet.street}" est dans notre zone de livraison !<br>
-                        📍 ${foundStreet.postcode} ${foundStreet.city} - Zone: ${foundStreet.zone}
-                    </div>
-                `;
-            } else {
-                resultDiv.innerHTML = `
-                    <div class="result not-found">
-                        ❌ "${streetName}" n'est pas dans notre zone de livraison
-                    </div>
-                    <div class="buttons">
-                        <button class="btn btn-primary" onclick="clearSearch()">Nouvelle recherche</button>
-                    </div>
-                `;
-            }
-        }
-
-        // Nettoyer la recherche
-        function clearSearch() {
-            document.getElementById('streetInput').value = '';
-            document.getElementById('result').innerHTML = '';
-            document.getElementById('suggestions').style.display = 'none';
-        }
-
-        // Gestion des événements
-        document.getElementById('streetInput').addEventListener('input', function(e) {
-            const query = e.target.value;
-            if (query.length >= 2) {
-                const suggestions = searchStreets(query);
-                showSuggestions(suggestions);
-            } else {
-                document.getElementById('suggestions').style.display = 'none';
-            }
-        });
-
-        document.getElementById('streetInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const query = e.target.value;
-                if (query.trim()) {
-                    document.getElementById('suggestions').style.display = 'none';
-                    searchStreet(query);
-                }
-            }
-        });
-
-        // Cacher les suggestions en cliquant ailleurs
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.search-box')) {
-                document.getElementById('suggestions').style.display = 'none';
-            }
-        });
-
-        // Gestion de l'import CSV
-        document.getElementById('csvInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file && file.type === 'text/csv') {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        parseCSV(e.target.result);
-                    } catch (error) {
-                        alert('Erreur lors de la lecture du fichier CSV: ' + error.message);
-                    }
-                };
-                reader.readAsText(file);
-            }
-        });
-
-        // Parser le CSV
-        function parseCSV(csvText) {
-            const lines = csvText.split('\n').filter(line => line.trim());
-            const headers = lines[0].split(',');
-            
-            const newStreets = [];
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(',');
-                if (values.length >= 4) {
-                    newStreets.push({
-                        street: values[2].replace(/"/g, ''),
-                        city: values[1].replace(/"/g, ''),
-                        postcode: values[0].replace(/"/g, ''),
-                        zone: values[5] ? values[5].replace(/"/g, '') : 'N/A'
-                    });
-                }
-            }
-            
-            if (newStreets.length > 0) {
-                streets = newStreets;
-                document.getElementById('streetCount').textContent = streets.length;
-                alert(`${newStreets.length} adresses importées avec succès !`);
-                clearSearch();
-            }
-        }
-
-        // Initialisation
-        document.getElementById('streetCount').textContent = streets.length;
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "avenue maurice destenay",
+        "la": "50,638405954364",
+        "lo": "5,5691244654333",
+        "zone": "4000BI"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "bergerue",
+        "la": "50,642330346961",
+        "lo": "5,5700621846576",
+        "zone": "4000CJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "boulevard d avroy",
+        "la": "50,633096729759",
+        "lo": "5,5670448654044",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "boulevard de la sauvenière",
+        "la": "50,64386",
+        "lo": "5,56786",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "boulevard émile de laveleye",
+        "la": "50,61906",
+        "lo": "5,59239",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "galerie de la sauvenière",
+        "la": "50,643832844546",
+        "lo": "5,5682392043978",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "galeries saint-lambert",
+        "la": "50,643920198022",
+        "lo": "5,5734816777299",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "passage charles bury",
+        "la": "50,64326",
+        "lo": "5,56664",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "passage lemonnier",
+        "la": "50,64204",
+        "lo": "5,57122",
+        "zone": "4000BW"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place cockerill",
+        "la": "50,641652559107",
+        "lo": "5,5765363943408",
+        "zone": "4000CE"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place de la cathédrale",
+        "la": "50,64065690887",
+        "lo": "5,5709253539255",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place des béguinages",
+        "la": "50,640208036778",
+        "lo": "5,5641625200659",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place des carmes",
+        "la": "50,639238266347",
+        "lo": "5,5738124105984",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place du vingt août",
+        "la": "50,640782678871",
+        "lo": "5,5763440697719",
+        "zone": "4000CE"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place emile dupont",
+        "la": "50,636292109372",
+        "lo": "5,5703998219007",
+        "zone": "4000BR"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place saint-christophe",
+        "la": "50,639971777965",
+        "lo": "5,5658270440578",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place saint-denis",
+        "la": "50,643237278164",
+        "lo": "5,5747777774596",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place saint-jacques",
+        "la": "50,637550341098",
+        "lo": "5,5694442595308",
+        "zone": "4000BI"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place saint-lambert",
+        "la": "50,644421388615",
+        "lo": "5,5732557290923",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place saint-paul",
+        "la": "50,639500757976",
+        "lo": "5,5714189107025",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place verte",
+        "la": "50,64426521031",
+        "lo": "5,5705471812864",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "place xavier neujean",
+        "la": "50,642796322995",
+        "lo": "5,5677243143441",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "pont d ile",
+        "la": "50,642304622268",
+        "lo": "5,5712530132629",
+        "zone": "4000CJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "quai roosevelt",
+        "la": "50,640888180657",
+        "lo": "5,5767827979567",
+        "zone": "4000CE"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue basse sauvenière",
+        "la": "50,644536755661",
+        "lo": "5,5696419473508",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue bassenge",
+        "la": "50,635846179311",
+        "lo": "5,5594399949558",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue beeckman",
+        "la": "50,634717462987",
+        "lo": "5,565625225547",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue bonne fortune",
+        "la": "50,6395237775",
+        "lo": "5,571756257496",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue carlier",
+        "la": "50,640391254459",
+        "lo": "5,5665889403251",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue césar franck",
+        "la": "50,638860106601",
+        "lo": "5,5593941129866",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue charles magnette",
+        "la": "50,640625694028",
+        "lo": "5,5729577646017",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue charles-morren",
+        "la": "50,632979399935",
+        "lo": "5,5621811784877",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue chevaufosse",
+        "la": "50,637364300164",
+        "lo": "5,5585626110047",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue courtois",
+        "la": "50,634484399115",
+        "lo": "5,5609157597467",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue darchis",
+        "la": "50,637054951673",
+        "lo": "5,5663265377017",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue de l etuve",
+        "la": "50,641953458933",
+        "lo": "5,574457533458",
+        "zone": "4000CE"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue de l université",
+        "la": "50,641665644129",
+        "lo": "5,5743347297325",
+        "zone": "4000CE"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue de la casquette",
+        "la": "50,642224903424",
+        "lo": "5,5680844820994",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue de la cathédrale",
+        "la": "50,641697701093",
+        "lo": "5,5730291110996",
+        "zone": "4000BW"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue de la populaire",
+        "la": "50,644656967648",
+        "lo": "5,5713628247428",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue de la régence",
+        "la": "50,642439418169",
+        "lo": "5,5743491505133",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue de la sirène",
+        "la": "50,641114235077",
+        "lo": "5,5727514680105",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue de la wache",
+        "la": "50,643148310336",
+        "lo": "5,5730452643914",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue de sluse",
+        "la": "50,632874622118",
+        "lo": "5,5616778009625",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue defrance",
+        "la": "50,635460845041",
+        "lo": "5,5588452430895",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue des anges",
+        "la": "50,633494148042",
+        "lo": "5,5632402953031",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue des augustins",
+        "la": "50,635386916125",
+        "lo": "5,5641176444216",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue des carmes",
+        "la": "50,639684035005",
+        "lo": "5,5741052867822",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue des célestines",
+        "la": "50,64171",
+        "lo": "5,56822",
+        "zone": "4000CJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue des chapelains",
+        "la": "50,639827912494",
+        "lo": "5,5670462594047",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue des clarisses",
+        "la": "50,638587976804",
+        "lo": "5,570626492741",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue des dominicains",
+        "la": "50,642659963719",
+        "lo": "5,5706872427559",
+        "zone": "4000CJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue des prémontrés",
+        "la": "50,637342249943",
+        "lo": "5,5742612351759",
+        "zone": "4000BF"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue des urbanistes",
+        "la": "50,641232879196",
+        "lo": "5,5663909611034",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue donceel",
+        "la": "50,642737119253",
+        "lo": "5,5740545078566",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue du diamant",
+        "la": "50,642441154592",
+        "lo": "5,5684574709506",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue du jardin botanique",
+        "la": "50,6346871285",
+        "lo": "5,5660439560231",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue du mery",
+        "la": "50,639627084258",
+        "lo": "5,5747658308976",
+        "zone": "4000BF"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue du mouton blanc",
+        "la": "50,64107663584",
+        "lo": "5,5704354295113",
+        "zone": "4000BW"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue du pot d or",
+        "la": "50,641713392095",
+        "lo": "5,5701609228266",
+        "zone": "4000CJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue du vertbois",
+        "la": "50,637826509015",
+        "lo": "5,5724871305747",
+        "zone": "4000BR"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue duvivier",
+        "la": "50,636028685269",
+        "lo": "5,5606883169864",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue etienne soubre",
+        "la": "50,638157741578",
+        "lo": "5,5590588277185",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue eugène ysaye",
+        "la": "50,636586310893",
+        "lo": "5,5696643045845",
+        "zone": "4000BR"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue frère michel",
+        "la": "50,640839344119",
+        "lo": "5,5657155222565",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue fusch",
+        "la": "50,635854152424",
+        "lo": "5,5629425716731",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue georges clémenceau",
+        "la": "50,643269348163",
+        "lo": "5,5708825793239",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue gérardrie",
+        "la": "50,644237650468",
+        "lo": "5,5742331254274",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue grandgagnage",
+        "la": "50,638763056163",
+        "lo": "5,5624328835554",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue hamal",
+        "la": "50,643532327864",
+        "lo": "5,5698726405194",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue hazinelle",
+        "la": "50,639745292184",
+        "lo": "5,5695958453339",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue henkart",
+        "la": "50,63665557311",
+        "lo": "5,5594899373919",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue jaspar",
+        "la": "50,64198150375",
+        "lo": "5,5647197800895",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue joffre",
+        "la": "50,64412527076",
+        "lo": "5,571585839413",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue jonfosse",
+        "la": "50,641681293682",
+        "lo": "5,5640303254602",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue lambert le bègue",
+        "la": "50,640160248643",
+        "lo": "5,564123925753",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue lambert lombard",
+        "la": "50,64380381963",
+        "lo": "5,574394905248",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue lonhienne",
+        "la": "50,641796193471",
+        "lo": "5,5653583663971",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue louvrex",
+        "la": "50,636678613917",
+        "lo": "5,5630268301861",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue lulay des fèbvres",
+        "la": "50,641914631212",
+        "lo": "5,5724713255924",
+        "zone": "4000BW"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue monulphe",
+        "la": "50,640497686902",
+        "lo": "5,5597845007895",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue nysten",
+        "la": "50,634471638277",
+        "lo": "5,5600709431482",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue pont d avroy",
+        "la": "50,640505039568",
+        "lo": "5,569260739105",
+        "zone": "4000BW"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue pouplin",
+        "la": "50,640726147231",
+        "lo": "5,5622638387745",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue reynier",
+        "la": "50,636943821346",
+        "lo": "5,5589698603156",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue rutxhiel",
+        "la": "50,639614543307",
+        "lo": "5,5657006993731",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue saint adalbert",
+        "la": "50,642084380484",
+        "lo": "5,5696481594247",
+        "zone": "4000CJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue saint denis",
+        "la": "50,643473045476",
+        "lo": "5,5736373966273",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue saint gangulphe",
+        "la": "50,64356",
+        "lo": "5,57352",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue saint gilles",
+        "la": "50,638618657638",
+        "lo": "5,5643992319012",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue saint jean en isle",
+        "la": "50,641585316624",
+        "lo": "5,5692852121424",
+        "zone": "4000CJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue saint martin en ile",
+        "la": "50,641061929347",
+        "lo": "5,5724122413716",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue saint michel",
+        "la": "50,64455",
+        "lo": "5,57193",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue saint paul",
+        "la": "50,639797299077",
+        "lo": "5,5729546655724",
+        "zone": "4000BJ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue saint remy",
+        "la": "50,638519103886",
+        "lo": "5,5695917028465",
+        "zone": "4000BI"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue sainte aldegonde",
+        "la": "50,642972452925",
+        "lo": "5,5751422383591",
+        "zone": "4000BH"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue sainte-marie",
+        "la": "50,632809207147",
+        "lo": "5,5650879078028",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue sebastien laruelle",
+        "la": "50,6427",
+        "lo": "5,56851",
+        "zone": "4000BM"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue soeurs de hasque",
+        "la": "50,640545780045",
+        "lo": "5,5735910702263",
+        "zone": "4000CE"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue sur-la-fontaine",
+        "la": "50,64005",
+        "lo": "5,56796",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue tête de boeuf",
+        "la": "50,6410931929",
+        "lo": "5,5690005087034",
+        "zone": "4000BW"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue trappé",
+        "la": "50,639914632952",
+        "lo": "5,5650780660283",
+        "zone": "4000BN"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "rue wazon",
+        "la": "50,639785236551",
+        "lo": "5,5587139736763",
+        "zone": "4000AQ"
+    },
+    {
+        "postcode": 4000,
+        "city": "Liège",
+        "street": "vinâve d ile",
+        "la": "50,641642463754",
+        "lo": "5,5713520500227",
+        "zone": "4000BW"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "avenue albert mahiels",
+        "la": "50,622066446684",
+        "lo": "5,5832133670539",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "avenue du luxembourg",
+        "la": "50,622253558204",
+        "lo": "5,5891786022439",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "avenue reine elisabeth",
+        "la": "50,620723425822",
+        "lo": "5,5900356618973",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "boulevard de douai",
+        "la": "50,620960776055",
+        "lo": "5,5938956124724",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "boulevard de froidmont",
+        "la": "50,624131291625",
+        "lo": "5,5902911692642",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "boulevard de l est",
+        "la": "50,642093410332",
+        "lo": "5,5813313961128",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "boulevard frankignoul",
+        "la": "50,627926728582",
+        "lo": "5,587773273511",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "boulevard raymond poincaré",
+        "la": "50,631197748564",
+        "lo": "5,5796804241624",
+        "zone": "4020AT"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "boulevard saucy",
+        "la": "50,640926320715",
+        "lo": "5,57937952928",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "chaussée des prés",
+        "la": "50,641888158794",
+        "lo": "5,5807005561021",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "clos michel thiry",
+        "la": "50,626487597503",
+        "lo": "5,5825701767735",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "cour hénaux",
+        "la": "50,634906755379",
+        "lo": "5,5827598752066",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "cour moreau",
+        "la": "50,634934114271",
+        "lo": "5,5825525873574",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "esplanade de l europe",
+        "la": "50,63168",
+        "lo": "5,57417",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "impasse boileau",
+        "la": "50,617884370745",
+        "lo": "5,5956004268206",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "impasse des jardins",
+        "la": "50,639314703634",
+        "lo": "5,5813360875885",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "impasse du chéra",
+        "la": "50,630856381861",
+        "lo": "5,5893955577611",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "impasse foidart",
+        "la": "50,635517038048",
+        "lo": "5,5872059619947",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "impasse guillaume",
+        "la": "50,626147235622",
+        "lo": "5,585314087582",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "impasse magnée",
+        "la": "50,631321364273",
+        "lo": "5,5873638010691",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "impasse pérard",
+        "la": "50,629907669525",
+        "lo": "5,5828068448565",
+        "zone": "4020AT"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "impasse renard",
+        "la": "50,630953836748",
+        "lo": "5,5862368030352",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "place barthélémy vieillevoye",
+        "la": "50,627952013893",
+        "lo": "5,5833025523706",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "place d italie",
+        "la": "50,632628532255",
+        "lo": "5,5745840078161",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "place delcour",
+        "la": "50,638836622203",
+        "lo": "5,5810958015958",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "place des nations unies",
+        "la": "50,622871328386",
+        "lo": "5,585772305291",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "place du parc",
+        "la": "50,630062811074",
+        "lo": "5,5773188982589",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "place georges-ista",
+        "la": "50,622064662769",
+        "lo": "5,5919973822194",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "place sylvain dupuis",
+        "la": "50,637556435302",
+        "lo": "5,5796589764861",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai churchill",
+        "la": "50,63661",
+        "lo": "5,57743",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai de gaulle",
+        "la": "50,641863510284",
+        "lo": "5,5792239449288",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai de l ourthe",
+        "la": "50,637647726632",
+        "lo": "5,5853582168026",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai de la boverie",
+        "la": "50,631543384197",
+        "lo": "5,5763620372677",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai de longdoz",
+        "la": "50,636768505169",
+        "lo": "5,5818168913213",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai des ardennes",
+        "la": "50,619722751437",
+        "lo": "5,59001466414",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai edouard van beneden",
+        "la": "50,638859120743",
+        "lo": "5,5787463268443",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai marcellis",
+        "la": "50,635694647856",
+        "lo": "5,5764260267409",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai mativa",
+        "la": "50,623890283057",
+        "lo": "5,5805805841353",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "quai orban",
+        "la": "50,633320369322",
+        "lo": "5,5781184720255",
+        "zone": "4020AW"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue adrien de witte",
+        "la": "50,62800971958",
+        "lo": "5,5848759029211",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue alfred magis",
+        "la": "50,636011957247",
+        "lo": "5,5820721245576",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue ansiaux",
+        "la": "50,632113862384",
+        "lo": "5,5877764589168",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue armand stouls",
+        "la": "50,632998134121",
+        "lo": "5,578758493149",
+        "zone": "4020AW"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue auguste hock",
+        "la": "50,627022379775",
+        "lo": "5,5811405720082",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue basse-wez",
+        "la": "50,632252637705",
+        "lo": "5,5882130383671",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue bernimolin",
+        "la": "50,627024141475",
+        "lo": "5,5866908125484",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue bouille",
+        "la": "50,634951049824",
+        "lo": "5,5862517786798",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue charles steenebruggen",
+        "la": "50,626563308319",
+        "lo": "5,5877528609431",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue coclers",
+        "la": "50,633142208276",
+        "lo": "5,5844566599162",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue d amercoeur",
+        "la": "50,637491571035",
+        "lo": "5,5884265489399",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue d harscamp",
+        "la": "50,6343221005",
+        "lo": "5,5793123688",
+        "zone": "4020AW"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de chaudfontaine",
+        "la": "50,62183047239",
+        "lo": "5,5849901691767",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de fétinne",
+        "la": "50,626602472731",
+        "lo": "5,5817888529182",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de l amblève",
+        "la": "50,620460995479",
+        "lo": "5,5895541511862",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de l ourthe",
+        "la": "50,638060360327",
+        "lo": "5,5824415795621",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de l usine",
+        "la": "50,632068754976",
+        "lo": "5,5858575507088",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de la limite",
+        "la": "50,63023",
+        "lo": "5,58761",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de londres",
+        "la": "50,621684535203",
+        "lo": "5,5875649707684",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de mulhouse",
+        "la": "50,632744004201",
+        "lo": "5,5861573070173",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de paris",
+        "la": "50,621161960476",
+        "lo": "5,5860759189234",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de pitteurs",
+        "la": "50,638889737091",
+        "lo": "5,5807855627357",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de seraing",
+        "la": "50,633864419992",
+        "lo": "5,5782970653958",
+        "zone": "4020AW"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de spa",
+        "la": "50,622910750123",
+        "lo": "5,5878418557014",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de stavelot",
+        "la": "50,621716076123",
+        "lo": "5,5892873439428",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de turin",
+        "la": "50,621333471307",
+        "lo": "5,5884279010319",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de verviers",
+        "la": "50,623040165623",
+        "lo": "5,5851404303783",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue de wetzlar",
+        "la": "50,620804657344",
+        "lo": "5,5903460258289",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des champs",
+        "la": "50,632812933032",
+        "lo": "5,5844773565857",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des croix de guerre",
+        "la": "50,627235354836",
+        "lo": "5,5835277041136",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des fories",
+        "la": "50,633510520906",
+        "lo": "5,5747919358996",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des gravillons",
+        "la": "50,622514070242",
+        "lo": "5,5914323239451",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des grignoux",
+        "la": "50,639542309715",
+        "lo": "5,5821245825831",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des houblonnières",
+        "la": "50,626406575618",
+        "lo": "5,5844078342477",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des joncs",
+        "la": "50,626319953506",
+        "lo": "5,5871881593417",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des naiveux",
+        "la": "50,621764902794",
+        "lo": "5,591973516323",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des prébendiers",
+        "la": "50,634983873143",
+        "lo": "5,5883483216641",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue des vennes",
+        "la": "50,619502060174",
+        "lo": "5,5928421638702",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue deveux",
+        "la": "50,635281023652",
+        "lo": "5,5827511101041",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue dothée",
+        "la": "50,631052526878",
+        "lo": "5,5812774186585",
+        "zone": "4020AT"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue douffet",
+        "la": "50,635010966865",
+        "lo": "5,584659140246",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue du fer",
+        "la": "50,634540545401",
+        "lo": "5,5839378861107",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue du nord-belge",
+        "la": "50,632577814052",
+        "lo": "5,5818798604364",
+        "zone": "4020AT"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue du parc",
+        "la": "50,631984957566",
+        "lo": "5,5750854309974",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue edouard remouchamps",
+        "la": "50,634390608937",
+        "lo": "5,5828504650733",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue eugène simonis",
+        "la": "50,626003590845",
+        "lo": "5,5877473816362",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue fisen",
+        "la": "50,63440142067",
+        "lo": "5,5858575836769",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue gaucet",
+        "la": "50,62489289847",
+        "lo": "5,5818295938241",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue grande bêche",
+        "la": "50,6405",
+        "lo": "5,58171",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue grétry",
+        "la": "50,634065009196",
+        "lo": "5,5823882957835",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue hubert desamore",
+        "la": "50,61857025058",
+        "lo": "5,5948666886729",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue jean delvoye",
+        "la": "50,640831193787",
+        "lo": "5,5815174549417",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue jondry",
+        "la": "50,623615003779",
+        "lo": "5,5901008346723",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue joseph delboeuf",
+        "la": "50,624324021402",
+        "lo": "5,5895634154716",
+        "zone": "4020AC"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue lairesse",
+        "la": "50,633375428706",
+        "lo": "5,5835720593175",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue latour",
+        "la": "50,631675489696",
+        "lo": "5,5814072370062",
+        "zone": "4020AT"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue léon frédéricq",
+        "la": "50,633511047959",
+        "lo": "5,5758242970977",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue libotte",
+        "la": "50,6357162876",
+        "lo": "5,579905485853",
+        "zone": "4020AW"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue louis jamme",
+        "la": "50,638396014992",
+        "lo": "5,585280871561",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue méan",
+        "la": "50,638156875496",
+        "lo": "5,5807656649589",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue natalis",
+        "la": "50,632224247562",
+        "lo": "5,5832908359157",
+        "zone": "4020AS"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue oscar englebert",
+        "la": "50,629140285404",
+        "lo": "5,5796087957915",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue paul-joseph delcloche",
+        "la": "50,61873774595",
+        "lo": "5,5932767104357",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue pont saint-nicolas",
+        "la": "50,641043071596",
+        "lo": "5,5818717614034",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue porte grumsel",
+        "la": "50,638652968237",
+        "lo": "5,5835337776717",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue pré-binet",
+        "la": "50,629522605222",
+        "lo": "5,5851234745484",
+        "zone": "4020AT"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue raes de heers",
+        "la": "50,639322091492",
+        "lo": "5,5847613045525",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue renoz",
+        "la": "50,632561092148",
+        "lo": "5,5754333905043",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue richard heintz",
+        "la": "50,628170293517",
+        "lo": "5,5835374050954",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue robertson",
+        "la": "50,636542041428",
+        "lo": "5,5843440216766",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue roture",
+        "la": "50,639729591215",
+        "lo": "5,5825175275972",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue rouleau",
+        "la": "50,639192694723",
+        "lo": "5,5839616852494",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue saint eloi",
+        "la": "50,641745187356",
+        "lo": "5,579950017007",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue saint remacle",
+        "la": "50,636806904661",
+        "lo": "5,5886291677287",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue saint vincent",
+        "la": "50,62543",
+        "lo": "5,58434",
+        "zone": "4020AD"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue stappers",
+        "la": "50,620656455358",
+        "lo": "5,5922101189288",
+        "zone": "4020AF"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue surlet",
+        "la": "50,640068206437",
+        "lo": "5,5817126321273",
+        "zone": "4020AM"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue tour en bêche",
+        "la": "50,636808110166",
+        "lo": "5,5781564898389",
+        "zone": "4020AB"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue valdor",
+        "la": "50,63679528465",
+        "lo": "5,5872449429036",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4020,
+        "city": "Liège",
+        "street": "rue vilette",
+        "la": "50,635015491127",
+        "lo": "5,5819295027427",
+        "zone": "4020AV"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "avenue des coteaux",
+        "la": "50,626458316188",
+        "lo": "5,5930230556852",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "avenue fransisco ferrer",
+        "la": "50,629185666218",
+        "lo": "5,5882646950412",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "cité des démineurs",
+        "la": "50,625756163812",
+        "lo": "5,5927224017186",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "impasse chéra",
+        "la": "50,630592913449",
+        "lo": "5,5895521279417",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "impasse nélis",
+        "la": "50,629674928611",
+        "lo": "5,5880301406455",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue billy",
+        "la": "50,62752699483",
+        "lo": "5,590392507108",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue bonne femme",
+        "la": "50,628884358999",
+        "lo": "5,5877600653563",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue de la chartreuse",
+        "la": "50,626358985165",
+        "lo": "5,5916245335807",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue des merwettes",
+        "la": "50,626864610371",
+        "lo": "5,5915495146779",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue des oblats",
+        "la": "50,630129750013",
+        "lo": "5,5892421323115",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue des pipiers",
+        "la": "50,628678440318",
+        "lo": "5,5870345768992",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue du beau mur",
+        "la": "50,629819884886",
+        "lo": "5,5883071208248",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue gilon",
+        "la": "50,625474425733",
+        "lo": "5,5939461765456",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue kinet",
+        "la": "50,62657",
+        "lo": "5,59052",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue sopers",
+        "la": "50,628364120974",
+        "lo": "5,5876736396043",
+        "zone": "4030AM"
+    },
+    {
+        "postcode": 4030,
+        "city": "Grivegnée",
+        "street": "rue soubre",
+        "la": "50,628784028262",
+        "lo": "5,5896788598527",
+        "zone": "4030AM"
+    }
+];
     </script>
 </body>
 </html>
