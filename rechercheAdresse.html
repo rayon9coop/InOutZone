@@ -23,6 +23,27 @@
             text-align: center;
             margin-bottom: 30px;
         }
+        .status-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .status-loading {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+        }
+        .status-error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        .status-success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -127,10 +148,14 @@
     <div class="container">
         <h1>Carte des rues de Liège</h1>
         
+        <div id="statusMessage" class="status-message status-loading">
+            Chargement des données...
+        </div>
+        
         <div class="stats" id="stats"></div>
         
         <div class="search-container">
-            <input type="text" id="searchBox" class="search-box" placeholder="Rechercher une rue...">
+            <input type="text" id="searchBox" class="search-box" placeholder="Rechercher une rue..." disabled>
             <div id="zoneIndicator" class="zone-indicator">Dans la zone</div>
         </div>
         
@@ -138,86 +163,128 @@
     </div>
 
     <script>
-        // Fonction pour charger les données depuis le CSV
-        async function loadStreetsData() {
-            try {
-                const csvContent = await window.fs.readFile('Détails Rue Rayon9_V2.csv', { encoding: 'utf8' });
-                
-                // Parse CSV manually (simple approach)
-                const lines = csvContent.split('\n');
-                const headers = lines[0].split(',');
-                const streets = [];
-                
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (line) {
-                        const values = line.split(',');
-                        if (values.length >= 6) {
-                            const lat = parseFloat(values[3].replace(',', '.'));
-                            const lng = parseFloat(values[4].replace(',', '.'));
-                            
-                            streets.push({
-                                postcode: parseInt(values[0]),
-                                city: values[1].replace(/"/g, ''),
-                                street: values[2].replace(/"/g, '').toLowerCase().trim(),
-                                lat: lat,
-                                lng: lng,
-                                zone: values[5].replace(/"/g, '')
-                            });
-                        }
-                    }
-                }
-                
-                return streets;
-            } catch (error) {
-                console.error('Erreur lors du chargement des données:', error);
-                // Fallback avec quelques données de base
-                return [
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "avenue maurice destenay",
-                        "lat": 50.638405954364,
-                        "lng": 5.5691244654333,
-                        "zone": "4000BI"
-                    },
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "bergerue",
-                        "lat": 50.642330346961,
-                        "lng": 5.5700621846576,
-                        "zone": "4000CJ"
-                    },
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "boulevard d avroy",
-                        "lat": 50.633096729759,
-                        "lng": 5.5670448654044,
-                        "zone": "4000AQ"
-                    },
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "place saint-lambert",
-                        "lat": 50.644421388615,
-                        "lng": 5.5732557290923,
-                        "zone": "4000BH"
-                    },
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "rue des carmes",
-                        "lat": 50.639684035005,
-                        "lng": 5.5741052867822,
-                        "zone": "4000BJ"
-                    }
-                ];
-            }
+        let streets = [];
+
+        // Fonction pour afficher les messages de statut
+        function showStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message status-${type}`;
+            statusEl.style.display = 'block';
         }
 
-        let streets = [];
+        function hideStatus() {
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+
+        // Fonction pour parser une ligne CSV avec gestion des guillemets
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"' && (i === 0 || line[i-1] === ',')) {
+                    inQuotes = true;
+                } else if (char === '"' && inQuotes && (i === line.length - 1 || line[i+1] === ',')) {
+                    inQuotes = false;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else if (char !== '"' || (inQuotes && char === '"')) {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+
+        // Fonction pour charger les données depuis le CSV
+        async function loadStreetsData() {
+            const possibleFilenames = [
+                'Détails Rue Rayon9_V2.csv',
+                'Details Rue Rayon9_V2.csv',
+                'Détails_Rue_Rayon9_V2.csv'
+            ];
+
+            for (const filename of possibleFilenames) {
+                try {
+                    console.log(`Tentative de chargement: ${filename}`);
+                    const csvContent = await window.fs.readFile(filename, { encoding: 'utf8' });
+                    
+                    const lines = csvContent.split('\n').filter(line => line.trim());
+                    console.log(`Trouvé ${lines.length} lignes dans ${filename}`);
+                    
+                    if (lines.length < 2) {
+                        throw new Error('Fichier vide ou sans données');
+                    }
+                    
+                    const headers = parseCSVLine(lines[0]);
+                    console.log('En-têtes détectés:', headers);
+                    
+                    const streets = [];
+                    
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (line) {
+                            const values = parseCSVLine(line);
+                            
+                            if (values.length >= 6) {
+                                // Nettoyage et conversion des coordonnées
+                                const latStr = values[3].replace(/[",]/g, '').replace(',', '.');
+                                const lngStr = values[4].replace(/[",]/g, '').replace(',', '.');
+                                
+                                const lat = parseFloat(latStr);
+                                const lng = parseFloat(lngStr);
+                                
+                                if (!isNaN(lat) && !isNaN(lng)) {
+                                    streets.push({
+                                        postcode: parseInt(values[0]) || 0,
+                                        city: values[1].replace(/[",]/g, '').trim(),
+                                        street: values[2].replace(/[",]/g, '').toLowerCase().trim(),
+                                        lat: lat,
+                                        lng: lng,
+                                        zone: values[5].replace(/[",]/g, '').trim()
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (streets.length === 0) {
+                        throw new Error('Aucune donnée valide trouvée');
+                    }
+                    
+                    console.log(`${streets.length} rues chargées avec succès`);
+                    showStatus(`${streets.length} rues chargées avec succès`, 'success');
+                    setTimeout(hideStatus, 3000);
+                    
+                    return streets;
+                    
+                } catch (error) {
+                    console.log(`Erreur avec ${filename}:`, error.message);
+                    continue;
+                }
+            }
+            
+            // Si aucun fichier n'a pu être chargé, utiliser les données de fallback
+            console.warn('Impossible de charger le fichier CSV, utilisation des données de démonstration');
+            showStatus('Fichier CSV introuvable, utilisation des données de démonstration', 'error');
+            
+            return [
+                {
+                    "postcode": 4020,
+                    "city": "Liège",
+                    "street": "rue de Mulhouse",
+                    "lat": 50,632744004201	,
+                    "lng": 5,5861573070173,
+                    "zone": "4020AS"
+                }
+            ];
+        }
 
         // Fonction pour calculer les statistiques
         function calculateStats() {
@@ -328,12 +395,19 @@
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('Chargement des données...');
-            streets = await loadStreetsData();
-            console.log(`${streets.length} rues chargées`);
-            
-            displayStats();
-            displayStreets();
+            try {
+                streets = await loadStreetsData();
+                
+                // Activer la recherche
+                document.getElementById('searchBox').disabled = false;
+                
+                displayStats();
+                displayStreets();
+                
+            } catch (error) {
+                console.error('Erreur fatale lors de l\'initialisation:', error);
+                showStatus('Erreur lors du chargement de l\'application', 'error');
+            }
         });
     </script>
 </body>
