@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte des rues de Liège</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .search-container {
+            position: relative;
+            margin: 20px 0;
+        }
+        .search-box {
+            padding: 10px;
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .zone-indicator {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-50%) translateX(10px); }
+            to { opacity: 1; transform: translateY(-50%) translateX(0); }
+        }
+        .streets-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .street-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .street-item:hover {
+            background-color: #f8f9fa;
+        }
+        .street-item.highlighted {
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+        }
+        .street-info {
+            flex-grow: 1;
+        }
+        .street-name {
+            font-weight: bold;
+            color: #333;
+            text-transform: capitalize;
+        }
+        .street-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .coordinates {
+            font-family: monospace;
+            font-size: 0.8em;
+            color: #999;
+            text-align: right;
+        }
+        .zone-badge {
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .no-results {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Carte des rues de Liège</h1>
+        
+        <div class="stats" id="stats"></div>
+        
+        <div class="search-container">
+            <input type="text" id="searchBox" class="search-box" placeholder="Rechercher une rue...">
+            <div id="zoneIndicator" class="zone-indicator">Dans la zone</div>
+        </div>
+        
+        <div class="streets-list" id="streetsList"></div>
+    </div>
+
+    <script>
+        // Fonction pour charger les données depuis le CSV
+        async function loadStreetsData() {
+            try {
+                const csvContent = await window.fs.readFile('Détails Rue Rayon9_V2.csv', { encoding: 'utf8' });
+                
+                // Parse CSV manually (simple approach)
+                const lines = csvContent.split('\n');
+                const headers = lines[0].split(',');
+                const streets = [];
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line) {
+                        const values = line.split(',');
+                        if (values.length >= 6) {
+                            const lat = parseFloat(values[3].replace(',', '.'));
+                            const lng = parseFloat(values[4].replace(',', '.'));
+                            
+                            streets.push({
+                                postcode: parseInt(values[0]),
+                                city: values[1].replace(/"/g, ''),
+                                street: values[2].replace(/"/g, '').toLowerCase().trim(),
+                                lat: lat,
+                                lng: lng,
+                                zone: values[5].replace(/"/g, '')
+                            });
+                        }
+                    }
+                }
+                
+                return streets;
+            } catch (error) {
+                console.error('Erreur lors du chargement des données:', error);
+                // Fallback avec quelques données de base
+                return [
+                    {
+                        "postcode": 4000,
+                        "city": "Liège",
+                        "street": "avenue maurice destenay",
+                        "lat": 50.638405954364,
+                        "lng": 5.5691244654333,
+                        "zone": "4000BI"
+                    },
+                    {
+                        "postcode": 4000,
+                        "city": "Liège",
+                        "street": "bergerue",
+                        "lat": 50.642330346961,
+                        "lng": 5.5700621846576,
+                        "zone": "4000CJ"
+                    },
+                    {
+                        "postcode": 4000,
+                        "city": "Liège",
+                        "street": "boulevard d avroy",
+                        "lat": 50.633096729759,
+                        "lng": 5.5670448654044,
+                        "zone": "4000AQ"
+                    },
+                    {
+                        "postcode": 4000,
+                        "city": "Liège",
+                        "street": "place saint-lambert",
+                        "lat": 50.644421388615,
+                        "lng": 5.5732557290923,
+                        "zone": "4000BH"
+                    },
+                    {
+                        "postcode": 4000,
+                        "city": "Liège",
+                        "street": "rue des carmes",
+                        "lat": 50.639684035005,
+                        "lng": 5.5741052867822,
+                        "zone": "4000BJ"
+                    }
+                ];
+            }
+        }
+
+        let streets = [];
+
+        // Fonction pour calculer les statistiques
+        function calculateStats() {
+            const totalStreets = streets.length;
+            const postcodes = [...new Set(streets.map(s => s.postcode))];
+            const zones = [...new Set(streets.map(s => s.zone))];
+            const cities = [...new Set(streets.map(s => s.city))];
+
+            return {
+                totalStreets,
+                postcodes: postcodes.length,
+                zones: zones.length,
+                cities: cities.length
+            };
+        }
+
+        // Fonction pour afficher les statistiques
+        function displayStats() {
+            const stats = calculateStats();
+            const statsContainer = document.getElementById('stats');
+            
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.totalStreets}</div>
+                    <div>Rues totales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.postcodes}</div>
+                    <div>Codes postaux</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.zones}</div>
+                    <div>Zones</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.cities}</div>
+                    <div>Villes</div>
+                </div>
+            `;
+        }
+
+        // Fonction pour afficher les rues
+        function displayStreets(streetsToShow = streets, highlightedStreet = null) {
+            const streetsList = document.getElementById('streetsList');
+            
+            if (streetsToShow.length === 0) {
+                streetsList.innerHTML = '<div class="no-results">Aucune rue trouvée</div>';
+                return;
+            }
+
+            streetsList.innerHTML = streetsToShow.map(street => {
+                const isHighlighted = highlightedStreet && street.street === highlightedStreet.street;
+                return `
+                    <div class="street-item ${isHighlighted ? 'highlighted' : ''}">
+                        <div class="street-info">
+                            <div class="street-name">${street.street}</div>
+                            <div class="street-details">${street.postcode} ${street.city}</div>
+                        </div>
+                        <div class="coordinates">
+                            ${street.lat.toFixed(6)}, ${street.lng.toFixed(6)}
+                        </div>
+                        <div class="zone-badge">${street.zone}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Fonction de recherche
+        function searchStreets(query) {
+            if (!query.trim()) {
+                return { results: streets, exactMatch: null };
+            }
+            
+            const searchTerm = query.toLowerCase().trim();
+            
+            // Recherche exacte d'abord
+            const exactMatch = streets.find(street => 
+                street.street.toLowerCase() === searchTerm
+            );
+            
+            // Puis recherche partielle
+            const results = streets.filter(street => 
+                street.street.toLowerCase().includes(searchTerm) ||
+                street.city.toLowerCase().includes(searchTerm) ||
+                street.postcode.toString().includes(searchTerm) ||
+                street.zone.toLowerCase().includes(searchTerm)
+            );
+            
+            return { results, exactMatch };
+        }
+
+        // Fonction pour afficher/masquer l'indicateur "Dans la zone"
+        function toggleZoneIndicator(show) {
+            const indicator = document.getElementById('zoneIndicator');
+            indicator.style.display = show ? 'block' : 'none';
+        }
+
+        // Gestionnaire d'événements pour la recherche
+        document.getElementById('searchBox').addEventListener('input', function(e) {
+            const { results, exactMatch } = searchStreets(e.target.value);
+            
+            // Afficher "Dans la zone" si correspondance exacte
+            toggleZoneIndicator(!!exactMatch);
+            
+            // Afficher les résultats avec mise en évidence si correspondance exacte
+            displayStreets(results, exactMatch);
+        });
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Chargement des données...');
+            streets = await loadStreetsData();
+            console.log(`${streets.length} rues chargées`);
+            
+            displayStats();
+            displayStreets();
+        });
+    </script>
+</body>
+</html>
