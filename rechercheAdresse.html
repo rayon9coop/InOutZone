@@ -139,89 +139,73 @@
 
     <script>
         // Fonction pour charger les données depuis le CSV
-        
-function loadStreetsData() {
-    const csvContent = document.getElementById('csvData').textContent.trim();
-    const lines = csvContent.split('
-');
-    const streets = [];
-
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line) {
-            const values = line.split(',');
-            if (values.length >= 6) {
-                // Nettoyage des valeurs, gestion des guillemets et conversion
-                const latStr = values[3].replace(/"/g, '').replace(',', '.');
-                const lngStr = values[4].replace(/"/g, '').replace(',', '.');
-                const lat = parseFloat(latStr);
-                const lng = parseFloat(lngStr);
-
-                streets.push({
-                    postcode: parseInt(values[0]),
-                    city: values[1].replace(/"/g, '').toLowerCase().trim(),
-                    street: values[2].replace(/"/g, '').toLowerCase().trim(),
-                    lat: lat,
-                    lng: lng,
-                    zone: values[5].replace(/"/g, '').trim()
-                });
-            }
-        }
-    }
-
-    return streets;
-}
-
-                    }
+        function loadStreetsData() {
+            try {
+                const csvElement = document.getElementById('csvData');
+                if (!csvElement) {
+                    console.error('Élément CSV non trouvé');
+                    return [];
                 }
                 
+                const csvContent = csvElement.textContent.trim();
+                const lines = csvContent.split('\n');
+                const streets = [];
+
+                // Commencer à la ligne 1 pour ignorer l'en-tête
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line) {
+                        // Parser le CSV en tenant compte des guillemets
+                        const values = parseCsvLine(line);
+                        if (values.length >= 6) {
+                            // Nettoyer et convertir les coordonnées
+                            const latStr = values[3].replace(/"/g, '').replace(',', '.');
+                            const lngStr = values[4].replace(/"/g, '').replace(',', '.');
+                            const lat = parseFloat(latStr);
+                            const lng = parseFloat(lngStr);
+
+                            if (!isNaN(lat) && !isNaN(lng)) {
+                                streets.push({
+                                    postcode: parseInt(values[0]),
+                                    city: values[1].replace(/"/g, '').trim(),
+                                    street: values[2].replace(/"/g, '').trim(),
+                                    lat: lat,
+                                    lng: lng,
+                                    zone: values[5].replace(/"/g, '').trim()
+                                });
+                            }
+                        }
+                    }
+                }
+
                 return streets;
             } catch (error) {
                 console.error('Erreur lors du chargement des données:', error);
-                // Fallback avec quelques données de base
-                return [
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "avenue maurice destenay",
-                        "lat": 50.638405954364,
-                        "lng": 5.5691244654333,
-                        "zone": "4000BI"
-                    },
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "bergerue",
-                        "lat": 50.642330346961,
-                        "lng": 5.5700621846576,
-                        "zone": "4000CJ"
-                    },
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "boulevard d avroy",
-                        "lat": 50.633096729759,
-                        "lng": 5.5670448654044,
-                        "zone": "4000AQ"
-                    },
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "place saint-lambert",
-                        "lat": 50.644421388615,
-                        "lng": 5.5732557290923,
-                        "zone": "4000BH"
-                    },
-                    {
-                        "postcode": 4000,
-                        "city": "Liège",
-                        "street": "rue des carmes",
-                        "lat": 50.639684035005,
-                        "lng": 5.5741052867822,
-                        "zone": "4000BJ"
-                    }
-                ];
+                return [];
             }
+        }
+
+        // Fonction pour parser une ligne CSV avec des guillemets
+        function parseCsvLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current);
+            return result;
         }
 
         let streets = [];
@@ -343,7 +327,8 @@ function loadStreetsData() {
             displayStreets();
         });
     </script>
-<script id="csvData" type="text/csv">
+
+    <script id="csvData" type="text/csv">
 Opostcode,Ocity,ostreet,Ola,Olo,Ozone
 4000,Liège,avenue maurice destenay,"50,638405954364","5,5691244654333",4000BI
 4000,Liège,bergerue,"50,642330346961","5,5700621846576",4000CJ
@@ -488,20 +473,6 @@ Opostcode,Ocity,ostreet,Ola,Olo,Ozone
 4020,Liège,quai marcellis,"50,635694647856","5,5764260267409",4020AB
 4020,Liège,quai mativa,"50,623890283057","5,5805805841353",4020AD
 4020,Liège,quai orban,"50,633320369322","5,5781184720255",4020AW
-4020,Liège,rue adrien de witte,"50,62800971958","5,5848759029211",4020AD
-4020,Liège,rue alfred magis,"50,636011957247","5,5820721245576",4020AV
-4020,Liège,rue ansiaux,"50,632113862384","5,5877764589168",4020AS
-4020,Liège,rue armand stouls,"50,632998134121","5,578758493149",4020AW
-4020,Liège,rue auguste hock,"50,627022379775","5,5811405720082",4020AD
-4020,Liège,rue basse-wez,"50,632252637705","5,5882130383671",4020AS
-4020,Liège,rue bernimolin,"50,627024141475","5,5866908125484",4020AC
-4020,Liège,rue bouille,"50,634951049824","5,5862517786798",4020AV
-4020,Liège,rue charles steenebruggen,"50,626563308319","5,5877528609431",4020AC
-4020,Liège,rue coclers,"50,633142208276","5,5844566599162",4020AS
-4020,Liège,rue d amercoeur,"50,637491571035","5,5884265489399",4020AV
-4020,Liège,rue d harscamp,"50,6343221005","5,5793123688",4020AW
-4020,Liège,rue de chaudfontaine,"50,62183047239","5,5849901691767",4020AD
-4020,Liège,rue de fétinne,"50,626602472731","5,5817888529182",4020AD
 4020,Liège,rue de l amblève,"50,620460995479","5,5895541511862",4020AC
 4020,Liège,rue de l ourthe,"50,638060360327","5,5824415795621",4020AM
 4020,Liège,rue de l usine,"50,632068754976","5,5858575507088",4020AS
@@ -584,6 +555,6 @@ Opostcode,Ocity,ostreet,Ola,Olo,Ozone
 4030,Grivegnée,rue kinet,"50,62657","5,59052",4030AM
 4030,Grivegnée,rue sopers,"50,628364120974","5,5876736396043",4030AM
 4030,Grivegnée,rue soubre,"50,628784028262","5,5896788598527",4030AM
-</script>
+    </script>
 </body>
-</html>
+</html> 
