@@ -151,16 +151,19 @@ function loadStreetsData() {
         if (line) {
             const values = line.split(',');
             if (values.length >= 6) {
-                const lat = parseFloat(values[3].replace(',', '.').replace('"', ''));
-                const lng = parseFloat(values[4].replace(',', '.').replace('"', ''));
+                // Nettoyage des valeurs, gestion des guillemets et conversion
+                const latStr = values[3].replace(/"/g, '').replace(',', '.');
+                const lngStr = values[4].replace(/"/g, '').replace(',', '.');
+                const lat = parseFloat(latStr);
+                const lng = parseFloat(lngStr);
 
                 streets.push({
                     postcode: parseInt(values[0]),
-                    city: values[1].replace(/"/g, ''),
+                    city: values[1].replace(/"/g, '').toLowerCase().trim(),
                     street: values[2].replace(/"/g, '').toLowerCase().trim(),
                     lat: lat,
                     lng: lng,
-                    zone: values[5].replace(/"/g, '')
+                    zone: values[5].replace(/"/g, '').trim()
                 });
             }
         }
