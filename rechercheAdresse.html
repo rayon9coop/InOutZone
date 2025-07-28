@@ -204,15 +204,23 @@
 
         // Fonction pour charger les données depuis le CSV
         async function loadStreetsData() {
+            // D'abord, essayons de charger le fichier CSV
             const possibleFilenames = [
                 'Détails Rue Rayon9_V2.csv',
                 'Details Rue Rayon9_V2.csv',
-                'Détails_Rue_Rayon9_V2.csv'
+                'Détails_Rue_Rayon9_V2.csv',
+                'Details_Rue_Rayon9_V2.csv'
             ];
 
             for (const filename of possibleFilenames) {
                 try {
                     console.log(`Tentative de chargement: ${filename}`);
+                    
+                    // Vérifier si window.fs existe
+                    if (typeof window.fs === 'undefined' || typeof window.fs.readFile !== 'function') {
+                        throw new Error('API de fichier non disponible dans cet environnement');
+                    }
+                    
                     const csvContent = await window.fs.readFile(filename, { encoding: 'utf8' });
                     
                     const lines = csvContent.split('\n').filter(line => line.trim());
@@ -259,7 +267,7 @@
                     }
                     
                     console.log(`${streets.length} rues chargées avec succès`);
-                    showStatus(`${streets.length} rues chargées avec succès`, 'success');
+                    showStatus(`${streets.length} rues chargées avec succès depuis ${filename}`, 'success');
                     setTimeout(hideStatus, 3000);
                     
                     return streets;
@@ -270,9 +278,9 @@
                 }
             }
             
-            // Si aucun fichier n'a pu être chargé, utiliser les données de fallback
+            // Si aucun fichier n'a pu être chargé, utiliser des données d'exemple étendues
             console.warn('Impossible de charger le fichier CSV, utilisation des données de démonstration');
-            showStatus('Fichier CSV introuvable, utilisation des données de démonstration', 'error');
+            showStatus('Fichier CSV introuvable - Mode démonstration avec données d\'exemple', 'error');
             
             return [
                 {
